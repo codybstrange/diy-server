@@ -7,6 +7,8 @@ import (
   "github.com/golang-jwt/jwt/v5"
   "fmt"
   "errors"
+  "strings"
+  "net/http"
 )
 
 const hashCost = 10
@@ -24,6 +26,18 @@ func CheckPasswordHash(password, hash string) error {
   return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 }
 
+func GetBearerToken(headers http.Header) (string, error){
+  val := headers.Get("Authorization")
+  if val == "" {
+    return "", errors.New("No Authorization header found")
+  }
+  splitToken := strings.Split(val, " ")
+  if len(splitToken) != 2 {
+    return "", errors.New("Incorrect format for the authorization header value")
+  }
+  return splitToken[1], nil
+}
+
 func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
   claims := jwt.RegisteredClaims{
     Issuer: string(TokenTypeAccess),
@@ -35,7 +49,6 @@ func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (str
   return token.SignedString([]byte(tokenSecret))
 }
 
-// ValidateJWT -
 func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	claimsStruct := jwt.RegisteredClaims{}
 	token, err := jwt.ParseWithClaims(

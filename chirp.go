@@ -9,6 +9,7 @@ import (
   "time"
   "context"
   "github.com/codybstrange/diy-server/internal/database"
+  "github.com/codybstrange/diy-server/internal/auth"
 )
 const maxChars = 140
 
@@ -72,11 +73,24 @@ func (cfg *apiConfig) handlerGetAllChirps(w http.ResponseWriter, r *http.Request
 }
 
 func (cfg *apiConfig) handlerPostChirp(w http.ResponseWriter, r *http.Request) {
+  token, err := auth.GetBearerToken(r.Header)
+  if err != nil {
+    respondWithError(w, http.StatusBadRequest, "Issue authenticating user", err) 
+    return
+  }
+
+  userID, err := auth.ValidateJWT(token, cfg.tokenSecret)
+  if err != nil {
+    respondWithError(w, http.StatusUnauthorized, "Token invalid", err)
+    return
+  }
+
   chirpData, err := validateChirp(w, r)
   if err != nil {
     return
   }
-
+  chirpData.UserID = userID
+  
   params := database.CreateChirpParams{
     Body: chirpData.Body,
     UserID: chirpData.UserID,
