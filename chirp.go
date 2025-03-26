@@ -109,8 +109,6 @@ func (cfg *apiConfig) handlerPostChirp(w http.ResponseWriter, r *http.Request) {
   respondWithJSON(w, http.StatusCreated, c)
 }
 
-
-
 func validateChirp(w http.ResponseWriter, r *http.Request) (ChirpReq, error) {
 
 	decoder := json.NewDecoder(r.Body)

@@ -5,9 +5,11 @@ import (
   "encoding/json"
   "net/http"
   "github.com/codybstrange/diy-server/internal/auth"
+  "github.com/codybstrange/diy-server/internal/database"
+  "time"
 )
 
-const maxTime = 3600
+const maxTime = 24*60
 
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
   type parameters struct {
@@ -38,7 +40,19 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
     respondWithError(w, http.StatusInternalServerError, "Token could not be created", err)
     return
   }
-  
+
+  refreshToken := auth.MakeRefreshToken()
+  // Add to database
+  expiresAt := time.Now().UTC().Add(maxTime * time.Hour)
+  tokenParams := database.CreateRefreshTokenParams{
+    Token: refreshToken,
+    UserID: user.ID,
+    ExpiresAt: expiresAt,
+  }
+  if err := cfg.db.CreateRefreshToken(context.Background(), tokenParams); err != nil {
+    respondWithError(w, http.StatusInternalServerError, "Refresh token couldn't be added to database", err)
+    return
+  }
 
   u := User {
     ID: user.ID,
@@ -46,7 +60,7 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
     UpdatedAt: user.UpdatedAt,
     Email: user.Email,
     Token: token,
-    RefreshToken: auth.MakeRefreshToken(), 
+    RefreshToken: refreshToken, 
   }
   respondWithJSON(w, http.StatusOK, u)
 }
