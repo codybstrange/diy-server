@@ -9,6 +9,8 @@ import (
   "errors"
   "strings"
   "net/http"
+  "crypto/rand"
+  "encoding/hex"
 )
 
 const hashCost = 10
@@ -16,6 +18,12 @@ type TokenType string
 const (
   TokenTypeAccess TokenType = "chirpy-access"
 )
+
+func MakeRefreshToken() string {
+  key := make([]byte, 32)
+  rand.Read(key)
+  return hex.EncodeToString(key)
+}
 
 func HashPassword(password string) (string, error) {
   hash, err := bcrypt.GenerateFromPassword([]byte(password), hashCost)
@@ -38,11 +46,11 @@ func GetBearerToken(headers http.Header) (string, error){
   return splitToken[1], nil
 }
 
-func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
+func MakeJWT(userID uuid.UUID, tokenSecret string) (string, error) {
   claims := jwt.RegisteredClaims{
     Issuer: string(TokenTypeAccess),
     IssuedAt: jwt.NewNumericDate(time.Now().UTC()),
-    ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(expiresIn)),
+    ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Hour * 1)),
     Subject: userID.String(),
   }
   token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
