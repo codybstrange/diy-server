@@ -36,6 +36,7 @@ func (cfg *apiConfig) handlerGetChirp(w http.ResponseWriter, r *http.Request) {
   parsedID, err := uuid.Parse(id)
   if err != nil {
     respondWithError(w, http.StatusInternalServerError, "Didn't recognize id as uuid", err)
+    return
   }
   chirp, err := cfg.db.GetChirp(context.Background(), parsedID)
   if err != nil {
