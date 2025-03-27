@@ -53,6 +53,7 @@ func (cfg *apiConfig) handlerUpdateDetails(w http.ResponseWriter, r *http.Reques
     CreatedAt: newUser.CreatedAt,
     UpdatedAt: newUser.UpdatedAt,
     Email: newUser.Email,
+    IsChirpyRed: newUser.IsChirpyRed,
   }
 
   respondWithJSON(w, http.StatusOK, u)
