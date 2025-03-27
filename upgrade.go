@@ -5,9 +5,16 @@ import (
   "net/http"
   "github.com/google/uuid"
   "context"
+  "github.com/codybstrange/diy-server/internal/auth"
 )
 
 func (cfg *apiConfig) handlerUpgradeUser(w http.ResponseWriter, r *http.Request) {
+  key, err := auth.GetAPIKey(r.Header)
+  if err != nil || key != cfg.polkaKey {
+    respondWithError(w, http.StatusUnauthorized, "Unauthorized to upgrade user", err)
+    return
+  }
+
   type parameters struct {
     Event string `json:"event"`
     Data struct {

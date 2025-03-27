@@ -16,6 +16,7 @@ type apiConfig struct {
   db *database.Queries
   platform string
   tokenSecret string
+  polkaKey string
 }
 
 func main() {
@@ -40,12 +41,14 @@ func main() {
   if tokenSecret == "" {
     log.Fatal("Unsecured server")
   }
+  polkaKey := os.Getenv("POLKA_KEY")
   
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},
     db: dbQueries,
     platform: platform,
     tokenSecret: tokenSecret,
+    polkaKey: polkaKey,
 	}
 
 	mux := http.NewServeMux()

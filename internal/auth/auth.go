@@ -34,13 +34,25 @@ func CheckPasswordHash(password, hash string) error {
   return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 }
 
+func GetAPIKey(headers http.Header) (string, error) {
+  val := headers.Get("Authorization")
+  if val == "" {
+    return "", errors.New("No Authorization header found")
+  }
+  splitToken := strings.Split(val, " ")
+  if len(splitToken) != 2 || splitToken[0] != "ApiKey" {
+    return "", errors.New("Incorrect format for the authorization header value")
+  }
+  return splitToken[1], nil
+}
+
 func GetBearerToken(headers http.Header) (string, error){
   val := headers.Get("Authorization")
   if val == "" {
     return "", errors.New("No Authorization header found")
   }
   splitToken := strings.Split(val, " ")
-  if len(splitToken) != 2 {
+  if len(splitToken) != 2 || splitToken[0] != "Bearer" {
     return "", errors.New("Incorrect format for the authorization header value")
   }
   return splitToken[1], nil

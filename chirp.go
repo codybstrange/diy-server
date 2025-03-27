@@ -10,6 +10,7 @@ import (
   "context"
   "github.com/codybstrange/diy-server/internal/database"
   "github.com/codybstrange/diy-server/internal/auth"
+  "sort"
 )
 const maxChars = 140
 
@@ -54,14 +55,31 @@ func (cfg *apiConfig) handlerGetChirp(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *apiConfig) handlerGetAllChirps(w http.ResponseWriter, r *http.Request) {
+  // Optional author_id query
+  authorID := r.URL.Query().Get("author_id")
+  parsedQueryID, err := uuid.Parse(authorID)
+  if err != nil && authorID != "" {
+    respondWithError(w, http.StatusInternalServerError, "Error parsing authorID", err)
+    return
+  }
   chirps, err := cfg.db.GetAllChirps(context.Background())
   if err != nil {
     respondWithError(w, http.StatusInternalServerError, "Issue with fetching all chirps", err)
     return
   }
   
+  sortMethod := r.URL.Query().Get("sort")
+  if sortMethod == "asc" {
+    sort.Slice(chirps, func(i, j int) bool { return chirps[i].CreatedAt.Before(chirps[j].CreatedAt)})
+  } else if sortMethod == "desc" {
+    sort.Slice(chirps, func(i, j int) bool { return chirps[i].CreatedAt.After(chirps[j].CreatedAt)})
+  }
+  
   output := []Chirp{}
   for _, c := range chirps {
+    if authorID != "" && parsedQueryID != c.UserID  {
+      continue
+    }
     output = append(output, Chirp {
       ID: c.ID,
       CreatedAt: c.CreatedAt,
